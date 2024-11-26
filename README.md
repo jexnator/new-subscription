@@ -1,20 +1,27 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# Repository: new-subscription
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+## Overview
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+This repository contains the configuration for provisioning new Azure subscriptions using reusable Terraform modules.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+## Key Components
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+- **main.tf:**  
+  Applies Terraform modules for provisioning required Azure resources.
+  
+- **prod.tfvars / dev.tfvars:**  
+  Environment-specific variable files for production and development configurations.
+
+- **Pipelines:**  
+  - `azure-pipelines.yml`: CI/CD pipeline for production deployments.  
+  - `azure-pipelines-dev.yml`: CI/CD pipeline for development deployments.
+
+## Usage
+
+This repository integrates the following Terraform modules:
+- **resource-group:** Creates resource groups adhering to internal naming conventions.
+- **vnet:** Provisions virtual networks with configurable subnets.
+- **vnet-peering:** Configures VNet peering between HUB and SPOKE VNets.
+- **storage-account:** Creates storage accounts with required settings.
+- **key-vault:** Provisions key vaults and manages secrets and access policies.
+- **sql-db:** Deploys SQL databases with customizable parameters.
