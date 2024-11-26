@@ -71,7 +71,7 @@ stages:
                 -backend-config="storage_account_name=tfstateiacpocmarti" \
                 -backend-config="container_name=terraform-state" \
                 -backend-config="key=new-subscription-dev.tfstate"
-            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            workingDirectory: $(System.DefaultWorkingDirectory)
             displayName: "Terraform Init"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
@@ -93,7 +93,7 @@ stages:
           - script: |
               terraform plan \
                 -var-file=dev.tfvars
-            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            workingDirectory: $(System.DefaultWorkingDirectory)
             displayName: "Terraform Plan"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
@@ -115,7 +115,7 @@ stages:
           - script: |
               terraform apply -auto-approve \
                 -var-file=dev.tfvars
-            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            workingDirectory: $(System.DefaultWorkingDirectory)
             displayName: "Terraform Apply"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
@@ -138,7 +138,7 @@ stages:
           - script: |
               terraform destroy -auto-approve \
                 -var-file=dev.tfvars
-            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            workingDirectory: $(System.DefaultWorkingDirectory)
             displayName: "Terraform Destroy"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
