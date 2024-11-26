@@ -74,10 +74,10 @@ stages:
             workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Init"
             env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(arm-client-id)
+              ARM_CLIENT_SECRET: $(arm-client-secret)
+              ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
+              ARM_TENANT_ID: $(arm-tenant-id)
 
   # Stage 3: Terraform Plan
   - stage: TerraformPlan
@@ -96,10 +96,10 @@ stages:
             workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Plan"
             env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(arm-client-id)
+              ARM_CLIENT_SECRET: $(arm-client-secret)
+              ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
+              ARM_TENANT_ID: $(arm-tenant-id)
 
   # Stage 4: Terraform Apply
   - stage: TerraformApply
@@ -118,10 +118,10 @@ stages:
             workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Apply"
             env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(arm-client-id)
+              ARM_CLIENT_SECRET: $(arm-client-secret)
+              ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
+              ARM_TENANT_ID: $(arm-tenant-id)
 
   # Stage 5: Terraform Destroy
   - stage: TerraformDestroy
@@ -141,7 +141,7 @@ stages:
             workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Destroy"
             env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_CLIENT_ID: $(arm-client-id)
+              ARM_CLIENT_SECRET: $(arm-client-secret)
+              ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
+              ARM_TENANT_ID: $(arm-tenant-id)
