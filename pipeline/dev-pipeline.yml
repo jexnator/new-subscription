@@ -1,0 +1,147 @@
+#***********************************************************
+# azure-pipelines-dev.yml
+#
+# Description:
+# Multi-stage pipeline to provision or destroy Terraform resources
+# using modules stored in a separate repository. Modules are accessed
+# via HTTPS using the System.AccessToken and Key Vault.
+#
+#***********************************************************
+
+trigger:
+  branches:
+    include:
+      - dev
+
+resources:
+  repositories:
+    - repository: terraform-modules
+      type: git
+      name: terraform-modules
+      ref: main
+
+variables:
+  - group: dev
+
+stages:
+  # Stage 1: Prepare Environment
+  - stage: PrepareEnvironment
+    displayName: "Prepare CI/CD Environment"
+    jobs:
+      - job: Prepare
+        displayName: "Prepare Terraform and Authentication"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          # Install Terraform
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: "latest"
+            displayName: "Install Terraform"
+
+          # Configure Git Authentication
+          - script: |
+              git config --global http.https://dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
+              export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://amanox@dev.azure.com'"
+            displayName: "Configure Git Authentication for Terraform Modules"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          # Checkout Main Repository (new-subscription)
+          - checkout: self
+            displayName: "Checkout new-subscription Repository"
+
+          # Checkout Terraform Modules Repository
+          - checkout: terraform-modules
+            displayName: "Checkout terraform-modules Repository"
+
+  # Stage 2: Terraform Initialization
+  - stage: TerraformInit
+    displayName: "Initialize Terraform"
+    dependsOn: PrepareEnvironment
+    jobs:
+      - job: Init
+        displayName: "Initialize Terraform Backend"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          # Terraform Init
+          - script: |
+              terraform init -reconfigure \
+                -backend-config="storage_account_name=tfstateiacpocmarti" \
+                -backend-config="container_name=terraform-state" \
+                -backend-config="key=new-subscription-dev.tfstate"
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            displayName: "Terraform Init"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+  # Stage 3: Terraform Plan
+  - stage: TerraformPlan
+    displayName: "Generate Terraform Plan"
+    dependsOn: TerraformInit
+    jobs:
+      - job: Plan
+        displayName: "Generate Terraform Execution Plan"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          # Terraform Plan
+          - script: |
+              terraform plan \
+                -var-file=dev.tfvars
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            displayName: "Terraform Plan"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+  # Stage 4: Terraform Apply
+  - stage: TerraformApply
+    displayName: "Apply Terraform Configuration"
+    dependsOn: TerraformPlan
+    jobs:
+      - job: Apply
+        displayName: "Apply Terraform Changes"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          # Terraform Apply
+          - script: |
+              terraform apply -auto-approve \
+                -var-file=dev.tfvars
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            displayName: "Terraform Apply"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+  # Stage 5: Terraform Destroy
+  - stage: TerraformDestroy
+    displayName: "Destroy Terraform Configuration"
+    dependsOn: TerraformInit
+    condition: eq(variables['destroy'], 'true') # Only run if 'destroy' is set to 'true'
+    jobs:
+      - job: Destroy
+        displayName: "Destroy Terraform Resources"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          # Terraform Destroy
+          - script: |
+              terraform destroy -auto-approve \
+                -var-file=dev.tfvars
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
+            displayName: "Terraform Destroy"
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
