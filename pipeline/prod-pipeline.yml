@@ -1,9 +1,9 @@
 #***********************************************************
-# azure-pipelines.yml
+# azure-pipelines-prod.yml
 #
 # Description:
-# Multi-stage pipeline to provision or destroy Terraform resources
-# using modules stored in a separate repository. Modules are accessed
+# Pipeline to provision Terraform resources using modules
+# stored in a separate repository. Modules are accessed
 # via HTTPS using the System.AccessToken and Key Vault.
 #
 #***********************************************************
@@ -11,7 +11,7 @@
 trigger:
   branches:
     include:
-      - main
+      - prod
 
 resources:
   repositories:
@@ -24,54 +24,44 @@ variables:
   - group: prod
 
 stages:
-  # Stage 1: Prepare Environment
-  - stage: PrepareEnvironment
-    displayName: "Prepare CI/CD Environment"
+  - stage: Terraform
+    displayName: "Terraform Stage"
     jobs:
-      - job: Prepare
-        displayName: "Prepare Terraform and Authentication"
+      - job: Terraform_Apply
+        displayName: "Terraform Apply"
         pool:
           vmImage: "ubuntu-latest"
+
         steps:
-          # Install Terraform
+          # Install correct Terraform version
           - task: TerraformInstaller@0
             inputs:
               terraformVersion: "latest"
-            displayName: "Install Terraform"
+            displayName: "Install latest Terraform Version"
 
-          # Configure Git Authentication
+          # Configure Git extra header for System.AccessToken
           - script: |
               git config --global http.https://dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
               export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://amanox@dev.azure.com'"
-            displayName: "Configure Git Authentication for Terraform Modules"
+            displayName: "Configure Git Authentication"
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-          # Checkout Main Repository (new-subscription)
+          # Checkout main repository (new-subscription)
           - checkout: self
-            displayName: "Checkout new-subscription Repository"
+            displayName: "Checkout new-subscription repo"
 
-          # Checkout Terraform Modules Repository
+          # Checkout terraform-modules repository
           - checkout: terraform-modules
-            displayName: "Checkout terraform-modules Repository"
+            displayName: "Checkout terraform-modules repo"
 
-  # Stage 2: Terraform Initialization
-  - stage: TerraformInit
-    displayName: "Initialize Terraform"
-    dependsOn: PrepareEnvironment
-    jobs:
-      - job: Init
-        displayName: "Initialize Terraform Backend"
-        pool:
-          vmImage: "ubuntu-latest"
-        steps:
           # Terraform Init
           - script: |
               terraform init -reconfigure \
-                -backend-config="storage_account_name=tfstateiacpocmarti" \
+                -backend-config="storage_account_name=pocmarti" \
                 -backend-config="container_name=terraform-state" \
-                -backend-config="key=new-subscription-prod.tfstate"
-            workingDirectory: $(System.DefaultWorkingDirectory)
+                -backend-config="key=prod-terraform.tfstate"
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Init"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
@@ -79,21 +69,11 @@ stages:
               ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
               ARM_TENANT_ID: $(arm-tenant-id)
 
-  # Stage 3: Terraform Plan
-  - stage: TerraformPlan
-    displayName: "Generate Terraform Plan"
-    dependsOn: TerraformInit
-    jobs:
-      - job: Plan
-        displayName: "Generate Terraform Execution Plan"
-        pool:
-          vmImage: "ubuntu-latest"
-        steps:
           # Terraform Plan
           - script: |
               terraform plan \
                 -var-file=prod.tfvars
-            workingDirectory: $(System.DefaultWorkingDirectory)
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Plan"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
@@ -101,21 +81,11 @@ stages:
               ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
               ARM_TENANT_ID: $(arm-tenant-id)
 
-  # Stage 4: Terraform Apply
-  - stage: TerraformApply
-    displayName: "Apply Terraform Configuration"
-    dependsOn: TerraformPlan
-    jobs:
-      - job: Apply
-        displayName: "Apply Terraform Changes"
-        pool:
-          vmImage: "ubuntu-latest"
-        steps:
           # Terraform Apply
           - script: |
               terraform apply -auto-approve \
                 -var-file=prod.tfvars
-            workingDirectory: $(System.DefaultWorkingDirectory)
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Apply"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
@@ -123,25 +93,39 @@ stages:
               ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
               ARM_TENANT_ID: $(arm-tenant-id)
 
-  # Stage 5: Terraform Destroy
-  - stage: TerraformDestroy
-    displayName: "Destroy Terraform Configuration"
-    dependsOn: TerraformInit
-    condition: eq(variables['destroy'], 'true') # Only run if 'destroy' is set to 'true'
-    jobs:
-      - job: Destroy
-        displayName: "Destroy Terraform Resources"
+      # Terraform Destroy Job
+      - job: Terraform_Destroy
+        displayName: "Terraform Destroy"
+        condition: eq(variables['destroy'], 'true') # Only run if 'destroy' is set to 'true'
         pool:
           vmImage: "ubuntu-latest"
+
         steps:
+          # Configure Git Authentication
+          - script: |
+              git config --global http.https://dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
+              export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://amanox@dev.azure.com'"
+            displayName: "Configure Git Authentication"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          # Checkout main repository (new-subscription)
+          - checkout: self
+            displayName: "Checkout new-subscription repo"
+
+          # Checkout terraform-modules repository
+          - checkout: terraform-modules
+            displayName: "Checkout terraform-modules repo"
+
           # Terraform Destroy
           - script: |
               terraform destroy -auto-approve \
                 -var-file=prod.tfvars
-            workingDirectory: $(System.DefaultWorkingDirectory)
+            workingDirectory: $(System.DefaultWorkingDirectory)/new-subscription
             displayName: "Terraform Destroy"
             env:
               ARM_CLIENT_ID: $(arm-client-id)
               ARM_CLIENT_SECRET: $(arm-client-secret)
               ARM_SUBSCRIPTION_ID: $(arm-subscription-id)
               ARM_TENANT_ID: $(arm-tenant-id)
+              
