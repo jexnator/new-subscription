@@ -16,8 +16,6 @@ module "resource_groups" {
   location    = var.location
 }
 
-https://MartiGroup@dev.azure.com/MartiGroup/DEV-IAC-Terraform/_git/iac-dev-terraform
-
 # Virtual Network Module
 module "vnet" {
   source              = "git::https://MartiGroup@dev.azure.com/MartiGroup/DEV-IAC-Terraform/_git/terraform-modules//vnet"
