@@ -42,7 +42,7 @@ stages:
           # Configure Git extra header for System.AccessToken
           - script: |
               git config --global http.https://dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
-              export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://amanox@dev.azure.com'"
+              export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://MartiGroup@dev.azure.com'"
             displayName: "Configure Git Authentication"
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
@@ -104,7 +104,7 @@ stages:
           # Configure Git Authentication
           - script: |
               git config --global http.https://dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
-              export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://amanox@dev.azure.com'"
+              export GIT_CONFIG_PARAMETERS="'url.https://$(System.AccessToken)@dev.azure.com.insteadof=https://MartiGroup@dev.azure.com'"
             displayName: "Configure Git Authentication"
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
